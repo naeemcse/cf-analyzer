@@ -78,6 +78,11 @@ const ResultView = () => {
                     placeholder="Enter Codeforces Handle"
                     value={handle}
                     onChange={(e) => setHandle(e.target.value)}
+                    onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                            fetchStats();
+                        }
+                    }}
                     style={{padding: '10px', fontSize: '16px'}}
                 />
                 <button
@@ -91,7 +96,8 @@ const ResultView = () => {
                 {userInfo && (
                     <div className={"mx-auto flex flex-col justify-center"} style={{marginTop: '20px'}}>
                         <h2>User Information</h2>
-                        <Image className={"ml-5 rounded-[50%] w-[100px] h-[100px]"} src={userInfo.avatar} alt="User Avatar" width={100} height={100} title={userInfo.handle} />
+                        <Image className={"ml-5 rounded-[50%] w-[100px] h-[100px]"} src={userInfo.avatar}
+                               alt="User Avatar" width={100} height={100} title={userInfo.handle}/>
                         <p><strong>Handle:</strong> {userInfo.handle}</p>
                         <p><strong>Current Rating:</strong> {userInfo.rating}</p>
                         <p className={"text-red-600"}><strong>Max Rating:</strong> {userInfo.maxRating}</p>
@@ -105,7 +111,7 @@ const ResultView = () => {
                         <tr>
                             <th>Programming Languages</th>
                             <th>Accepted Problems</th>
-                            <th className={"text-red-600"} >Wrong Answers</th>
+                            <th className={"text-red-600"}>Wrong Answers</th>
                         </tr>
                         </thead>
                         <tbody>
