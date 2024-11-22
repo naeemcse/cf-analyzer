@@ -1,10 +1,13 @@
 'use client';
-import React from 'react';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import axios from 'axios';
+import { Bar } from 'react-chartjs-2';
+import 'chart.js/auto';
+import Image  from "next/image";
 const ResultView = () => {
     const [handle, setHandle] = useState('');
     const [result, setResult] = useState(null);
+    const [userInfo, setUserInfo] = useState(null);
 
     const fetchStats = async () => {
         try {
@@ -15,56 +18,120 @@ const ResultView = () => {
             if (response.data.status === 'OK') {
                 const submissions = response.data.result;
                 const solvedByLanguage = {};
+                const wrongByLanguage = {};
                 const uniqueProblems = new Set();
 
                 submissions.forEach((submission) => {
+                    const language = submission.programmingLanguage;
+                    const problemId = `${submission.problem.contestId}-${submission.problem.index}`;
+
                     if (submission.verdict === 'OK') {
-                        const problemId = `${submission.problem.contestId}-${submission.problem.index}`;
                         if (!uniqueProblems.has(problemId)) {
                             uniqueProblems.add(problemId);
-                            const language = submission.programmingLanguage;
-                            solvedByLanguage[language] =
-                                (solvedByLanguage[language] || 0) + 1;
+                            solvedByLanguage[language] = (solvedByLanguage[language] || 0) + 1;
                         }
+                    } else if (submission.verdict === 'WRONG_ANSWER') {
+                        wrongByLanguage[language] = (wrongByLanguage[language] || 0) + 1;
                     }
                 });
 
-                setResult(solvedByLanguage);
+                setResult({ solvedByLanguage, wrongByLanguage });
+            }
+
+            const userInfoResponse = await axios.get(
+                `https://codeforces.com/api/user.info?handles=${handle}`
+            );
+
+            if (userInfoResponse.data.status === 'OK') {
+                setUserInfo(userInfoResponse.data.result[0]);
             }
         } catch (error) {
             console.error('Error fetching data:', error);
         }
     };
+
+    const totalSolved = result ? Object.values(result.solvedByLanguage).reduce((a, b) => a + b, 0) : 0;
+    const totalLanguages = result ? Object.keys(result.solvedByLanguage).length : 0;
+
+    const chartData = result ? {
+        labels: Object.keys(result.solvedByLanguage),
+        datasets: [
+            {
+                label: 'Accepted',
+                data: Object.values(result.solvedByLanguage),
+                backgroundColor: 'rgba(75, 192, 192, 0.6)',
+            },
+            {
+                label: 'Wrong Answers',
+                data: Object.keys(result.solvedByLanguage).map(language => result.wrongByLanguage[language] || 0),
+                backgroundColor: 'rgba(255, 99, 132, 0.6)',
+            },
+        ],
+    } : null;
+
     return (
-        <div style={{padding: '20px', fontFamily: 'Arial'}}>
-            <h1>Codeforces Problem Stats</h1>
-            <input
-                className="border border-blue-400 rounded focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
-                type="text"
-                placeholder="Enter Codeforces Handle"
-                value={handle}
-                onChange={(e) => setHandle(e.target.value)}
-                style={{padding: '10px', fontSize: '16px'}}
-            />
-            <button className="bg-blue-500  border rounded-md hover:text-red-600 hover:bg-blue-50 " onClick={fetchStats}
-                    style={{marginLeft: '10px', padding: '10px', fontSize: '16px'}}>
-                Get Information
-            </button>
-           <h1>
-               {result && `Statistics for ${handle}`}
-           </h1>
-            {result && (
-            <div className="grid gap-2 grid-cols-2 border-2 p-3 mt-2 text-center">
-                <div>Programming Languages:</div>
-                <div>Solved Problems</div>
-                {Object.entries(result).map(([language, count]) => (
-                    <React.Fragment key={language}>
-                        <div className="border-2">{language}</div>
-                        <div className="border-2">{count} problems</div>
-                    </React.Fragment>
-                ))}
+        <div className="table-container">
+            <div className="center-container">
+                <h1 className={"text-gray-400 my-5"}> Write your codeforces handle and know details </h1>
+                <input
+                    className="m-2 border border-blue-400 rounded focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                    type="text"
+                    placeholder="Enter Codeforces Handle"
+                    value={handle}
+                    onChange={(e) => setHandle(e.target.value)}
+                    style={{padding: '10px', fontSize: '16px'}}
+                />
+                <button
+                    className="bg-blue-500 border rounded-md hover:text-red-600 hover:bg-blue-50"
+                    onClick={fetchStats}
+                    style={{marginLeft: '10px', padding: '10px', fontSize: '16px'}}
+                >
+                    Get Information
+                </button>
+
+                {userInfo && (
+                    <div className={"mx-auto flex flex-col justify-center"} style={{marginTop: '20px'}}>
+                        <h2>User Information</h2>
+                        <Image className={"ml-5 rounded-[50%] w-[100px] h-[100px]"} src={userInfo.avatar} alt="User Avatar" width={100} height={100} title={userInfo.handle} />
+                        <p><strong>Handle:</strong> {userInfo.handle}</p>
+                        <p><strong>Current Rating:</strong> {userInfo.rating}</p>
+                        <p className={"text-red-600"}><strong>Max Rating:</strong> {userInfo.maxRating}</p>
+                    </div>
+                )}
             </div>
+            {result && (
+                <>
+                    <table className="table">
+                        <thead>
+                        <tr>
+                            <th>Programming Languages</th>
+                            <th>Accepted Problems</th>
+                            <th className={"text-red-600"} >Wrong Answers</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {Object.keys(result.solvedByLanguage).map((language) => (
+                            <tr key={language}>
+                                <td>{language}</td>
+                                <td>{result.solvedByLanguage[language]} problems</td>
+                                <td>{result.wrongByLanguage[language] || 0} problems</td>
+                            </tr>
+                        ))}
+                        <tr>
+                            <td><strong>Total</strong></td>
+                            <td><strong>{totalSolved} problems</strong></td>
+                            <td></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                    <div className="chart-container">
+                        <div className="chart">
+                            <Bar data={chartData}/>
+                        </div>
+                    </div>
+                </>
             )}
+
         </div>
     );
 };

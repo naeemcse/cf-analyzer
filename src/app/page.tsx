@@ -1,5 +1,6 @@
 import Image from "next/image";
 import ResultView from "@/components/ResultView";
+import UserDetails from "@/components/UserDetails";
 
 export default function Home() {
   return (
@@ -10,5 +11,6 @@ export default function Home() {
    </h1>
 
           <ResultView/>
+          {/*<UserDetails/>*/}
 </> );
 }
