@@ -51,7 +51,6 @@ const ResultView = () => {
     };
 
     const totalSolved = result ? Object.values(result.solvedByLanguage).reduce((a, b) => a + b, 0) : 0;
-    const totalLanguages = result ? Object.keys(result.solvedByLanguage).length : 0;
 
     const chartData = result ? {
         labels: Object.keys(result.solvedByLanguage),

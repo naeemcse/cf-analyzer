@@ -1,7 +1,5 @@
-import Image from "next/image";
-import ResultView from "@/components/ResultView";
-import UserDetails from "@/components/UserDetails";
 
+import ResultView from "@/components/ResultView";
 export default function Home() {
   return (
       <>
