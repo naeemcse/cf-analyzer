@@ -5,7 +5,6 @@ import { Bar } from 'react-chartjs-2';
 import 'chart.js/auto';
 import Image  from "next/image";
 import FetchHandleData from "@/components/FetchHandleData";
-import PieChart from "@/components/PieChart";
 const ResultView = () => {
     const [handle, setHandle] = useState('');
     const [result, setResult] = useState(null);
