@@ -4,6 +4,8 @@ import axios from 'axios';
 import { Bar } from 'react-chartjs-2';
 import 'chart.js/auto';
 import Image  from "next/image";
+import FetchHandleData from "@/components/FetchHandleData";
+import PieChart from "@/components/PieChart";
 const ResultView = () => {
     const [handle, setHandle] = useState('');
     const [result, setResult] = useState(null);
@@ -129,14 +131,30 @@ const ResultView = () => {
                         </tr>
                         </tbody>
                     </table>
-                    <div className="chart-container">
-                        <div className="chart">
-                            <Bar data={chartData}/>
-                        </div>
+
+                    <div
+                        className="w-full max-w-screen-2xl h-[500px] mx-auto bg-gray-50 rounded-md shadow-md chart-container m-2 p-4">
+
+                            <Bar
+                                data={chartData}
+                                options={{
+                                    responsive: true,  // Ensures chart is responsive
+                                    maintainAspectRatio: false,  // Allows it to stretch and resize
+                                    aspectRatio: 2,  // You can change aspectRatio to control the chart's shape
+                                }}
+                            />
+
                     </div>
+
+
                 </>
             )}
 
+            {
+                result && (
+                    <FetchHandleData handle={handle}/>
+                )
+            }
         </div>
     );
 };

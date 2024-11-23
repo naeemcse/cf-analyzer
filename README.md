@@ -1,5 +1,7 @@
 # CF-Analyzer
 
+Live link : [CF-Analyzer](https://cf-analyzer.vercel.app/)
+
 This is a Next.js web application that is used for analyzing Codeforces profiles. It provides detailed statistics about a user's problem-solving performance, including the number of problems solved and wrong answers by programming language. The application also displays user information such as handle, current rating, and maximum rating.
 
 ## Features
@@ -22,3 +24,4 @@ This is a Next.js web application that is used for analyzing Codeforces profiles
    ```bash
    git clone https://github.com/yourusername/cf-analyzer.git
    cd cf-analyzer
+   
