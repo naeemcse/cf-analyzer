@@ -1,15 +1,18 @@
 'use client';
-import React, { useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import axios from 'axios';
 import { Bar } from 'react-chartjs-2';
 import 'chart.js/auto';
 import Image  from "next/image";
 import FetchHandleData from "@/components/FetchHandleData";
 const ResultView = () => {
+    const [inputValue, setInputValue] = useState('');
     const [handle, setHandle] = useState('');
     const [result, setResult] = useState(null);
     const [userInfo, setUserInfo] = useState(null);
-
+    const [isLoading, setIsLoading] = useState(false);
+    // Find Unique Problems
+/*
     const fetchStats = async () => {
         try {
             const response = await axios.get(
@@ -50,6 +53,71 @@ const ResultView = () => {
             console.error('Error fetching data:', error);
         }
     };
+*/
+
+    // Find all problems unique dosent matter if solved or not
+    const fetchStats = async () => {
+        setIsLoading(true);
+        try {
+            const response = await axios.get(
+                `https://codeforces.com/api/user.status?handle=${handle}`
+            );
+
+            if (response.data.status === 'OK') {
+                const submissions = response.data.result;
+                const solvedByLanguage = {};
+                const wrongByLanguage = {};
+                const uniqueProblems = new Set();
+
+                submissions.forEach((submission) => {
+                    const language = submission.programmingLanguage;
+                    const problemId = `${submission.problem.contestId}-${submission.problem.index}`;
+
+                    uniqueProblems.add(problemId);
+
+                    if (submission.verdict === 'OK') {
+                        solvedByLanguage[language] = (solvedByLanguage[language] || 0) + 1;
+                    } else if (submission.verdict === 'WRONG_ANSWER') {
+                        wrongByLanguage[language] = (wrongByLanguage[language] || 0) + 1;
+                    }
+                });
+
+                setResult({ solvedByLanguage, wrongByLanguage, uniqueProblems: uniqueProblems.size });
+            }
+
+            const userInfoResponse = await axios.get(
+                `https://codeforces.com/api/user.info?handles=${handle}`
+            );
+
+            if (userInfoResponse.data.status === 'OK') {
+                setUserInfo(userInfoResponse.data.result[0]);
+            }
+        } catch (error) {
+            console.error('Error fetching data:', error);
+        }
+        finally {
+            setIsLoading(false);
+        }
+    };
+    const handleInputChange = (e) => {
+        setInputValue(e.target.value);
+    };
+
+    const handleKeyPress = (e) => {
+        if (e.key === 'Enter') {
+            setHandle(inputValue);
+        }
+    };
+
+    const handleButtonClick = () => {
+        setHandle(inputValue);
+    };
+
+    useEffect(() => {
+        if (handle) {
+            fetchStats();
+        }
+    }, [handle]);
 
     const totalSolved = result ? Object.values(result.solvedByLanguage).reduce((a, b) => a + b, 0) : 0;
 
@@ -77,29 +145,28 @@ const ResultView = () => {
                     className="m-2 border border-blue-400 rounded focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
                     type="text"
                     placeholder="Enter Codeforces Handle"
-                    value={handle}
-                    onChange={(e) => setHandle(e.target.value)}
-                    onKeyPress={(e) => {
-                        if (e.key === 'Enter') {
-                            fetchStats();
-                        }
-                    }}
+                    value={inputValue}
+                    onChange={handleInputChange}
+                    onKeyPress={handleKeyPress}
                     style={{padding: '10px', fontSize: '16px'}}
                 />
                 <button
                     className="bg-blue-500 border rounded-md hover:text-red-600 hover:bg-blue-50"
-                    onClick={fetchStats}
+                    onClick={handleButtonClick}
+                    disabled={isLoading}
                     style={{marginLeft: '10px', padding: '10px', fontSize: '16px'}}
                 >
-                    Get Information
+                    {isLoading ? 'Loading...' : 'Get Information'}
                 </button>
 
                 {userInfo && (
                     <div className={"mx-auto flex flex-col justify-center"} style={{marginTop: '20px'}}>
                         <h2>User Information</h2>
-                        <Image className={"ml-5 rounded-[50%] w-[100px] h-[100px]"} src={userInfo.avatar}
+                        <Image className={"mx-auto rounded-[50%] w-[100px] h-[100px]"} src={userInfo.avatar}
                                alt="User Avatar" width={100} height={100} title={userInfo.handle}/>
                         <p><strong>Handle:</strong> {userInfo.handle}</p>
+                        {userInfo.firstName && userInfo.lastName && (
+                            <p><strong> Name :</strong> {userInfo.firstName} {userInfo.lastName}</p>)}
                         <p><strong>Current Rating:</strong> {userInfo.rating}</p>
                         <p className={"text-red-600"}><strong>Max Rating:</strong> {userInfo.maxRating}</p>
                     </div>
@@ -128,6 +195,12 @@ const ResultView = () => {
                             <td><strong>{totalSolved} problems</strong></td>
                             <td></td>
                         </tr>
+
+                        <tr>
+                            <td><strong>Unique Problems</strong></td>
+                            <td><strong>{result.uniqueProblems} problems</strong></td>
+                            <td></td>
+                        </tr>
                         </tbody>
                     </table>
 
@@ -151,7 +224,7 @@ const ResultView = () => {
 
             {
                 result && (
-                    <FetchHandleData handle={handle}/>
+                    <FetchHandleData handle= {handle}/>
                 )
             }
         </div>
