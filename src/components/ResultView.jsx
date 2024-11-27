@@ -56,7 +56,9 @@ const ResultView = () => {
 */
 
     // Find all problems unique dosent matter if solved or not
-    const fetchStats = async () => {
+ /*
+
+ const fetchStats = async () => {
         setIsLoading(true);
         try {
             const response = await axios.get(
@@ -99,6 +101,72 @@ const ResultView = () => {
             setIsLoading(false);
         }
     };
+
+    */
+
+   // Find unique problems and unique in language.
+
+    const fetchStats = async () => {
+        setIsLoading(true);
+        try {
+            const response = await axios.get(
+                `https://codeforces.com/api/user.status?handle=${handle}`
+            );
+
+            if (response.data.status === 'OK') {
+                const submissions = response.data.result;
+                const solvedByLanguage = {};
+                const wrongByLanguage = {};
+                const uniqueProblems = new Set();
+                const allProblems = new Set();
+                const uniqueProblemsByLanguage = {};
+
+                submissions.forEach((submission) => {
+                    const language = submission.programmingLanguage;
+                    const problemId = `${submission.problem.contestId}-${submission.problem.index}`;
+
+                    allProblems.add(problemId);
+
+                    if (!uniqueProblemsByLanguage[language]) {
+                        uniqueProblemsByLanguage[language] = new Set();
+                    }
+
+                    if (submission.verdict === 'OK') {
+                        solvedByLanguage[language] = (solvedByLanguage[language] || 0) + 1;
+                        if (!uniqueProblemsByLanguage[language].has(problemId)) {
+                            uniqueProblemsByLanguage[language].add(problemId);
+                        }
+                        uniqueProblems.add(problemId);
+                    } else if (submission.verdict === 'WRONG_ANSWER') {
+                        wrongByLanguage[language] = (wrongByLanguage[language] || 0) + 1;
+                    }
+                });
+
+                setResult({
+                    solvedByLanguage,
+                    wrongByLanguage,
+                    uniqueProblems: uniqueProblems.size,
+                    allProblems: allProblems.size,
+                    uniqueProblemsByLanguage: Object.fromEntries(
+                        Object.entries(uniqueProblemsByLanguage).map(([lang, problems]) => [lang, problems.size])
+                    ) // Convert Sets to their sizes
+                });
+            }
+
+            const userInfoResponse = await axios.get(
+                `https://codeforces.com/api/user.info?handles=${handle}`
+            );
+
+            if (userInfoResponse.data.status === 'OK') {
+                setUserInfo(userInfoResponse.data.result[0]);
+            }
+        } catch (error) {
+            console.error('Error fetching data:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     const handleInputChange = (e) => {
         setInputValue(e.target.value);
     };
@@ -174,11 +242,13 @@ const ResultView = () => {
             </div>
             {result && (
                 <>
+
                     <table className="table">
                         <thead>
                         <tr>
                             <th>Programming Languages</th>
                             <th>Accepted Problems</th>
+                            <th>Unique Problems</th>
                             <th className={"text-red-600"}>Wrong Answers</th>
                         </tr>
                         </thead>
@@ -187,23 +257,24 @@ const ResultView = () => {
                             <tr key={language}>
                                 <td>{language}</td>
                                 <td>{result.solvedByLanguage[language]} problems</td>
+                                <td>{result.uniqueProblemsByLanguage[language] || 0} problems</td>
                                 <td>{result.wrongByLanguage[language] || 0} problems</td>
                             </tr>
                         ))}
                         <tr>
                             <td><strong>Total</strong></td>
-                            <td><strong>{totalSolved} problems</strong></td>
-                            <td></td>
+                            <td><strong>{Object.values(result.solvedByLanguage).reduce((a, b) => a + b, 0)} problems</strong></td>
+                            <td><strong>{Object.values(result.uniqueProblemsByLanguage).reduce((a, b) => a + b, 0)} problems</strong></td>
+                            <td><strong>{Object.values(result.wrongByLanguage).reduce((a, b) => a + b, 0)} problems</strong></td>
                         </tr>
-
                         <tr>
                             <td><strong>Unique Problems</strong></td>
                             <td><strong>{result.uniqueProblems} problems</strong></td>
                             <td></td>
+                            <td></td>
                         </tr>
                         </tbody>
                     </table>
-
                     <div
                         className="w-full max-w-screen-2xl h-[500px] mx-auto bg-gray-50 rounded-md shadow-md chart-container m-2 p-4">
 
@@ -215,7 +286,6 @@ const ResultView = () => {
                                     aspectRatio: 2,  // You can change aspectRatio to control the chart's shape
                                 }}
                             />
-
                     </div>
 
 
@@ -224,7 +294,7 @@ const ResultView = () => {
 
             {
                 result && (
-                    <FetchHandleData handle= {handle}/>
+                    <FetchHandleData handle={handle}/>
                 )
             }
         </div>
