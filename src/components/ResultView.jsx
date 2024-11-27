@@ -187,7 +187,7 @@ const ResultView = () => {
         }
     }, [handle]);
 
-    const totalSolved = result ? Object.values(result.solvedByLanguage).reduce((a, b) => a + b, 0) : 0;
+   // const totalSolved = result ? Object.values(result.solvedByLanguage).reduce((a, b) => a + b, 0) : 0;
 
     const chartData = result ? {
         labels: Object.keys(result.solvedByLanguage),
